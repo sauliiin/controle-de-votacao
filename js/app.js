@@ -7,6 +7,7 @@
 const firebaseConfig = {
     apiKey: "AIzaSyB81J-a9i5ZMSnuEf0_E6B_fBmmf8r9bBo",
     authDomain: "alien-bruin-339920.firebaseapp.com",
+    databaseURL: "https://alien-bruin-339920-default-rtdb.firebaseio.com",
     projectId: "alien-bruin-339920",
     storageBucket: "alien-bruin-339920.firebasestorage.app",
     messagingSenderId: "330511053030",
@@ -29,9 +30,7 @@ const state = {
 // Listen for Realtime Updates from Firebase
 db.ref('relatores').on('value', (snapshot) => {
     const data = snapshot.val();
-    if (data) {
-        state.relatores = data;
-    }
+    state.relatores = data || [];
     
     // Only re-render if the user is logged in
     if (state.currentUser) {

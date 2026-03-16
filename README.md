@@ -1,90 +1,119 @@
-# Controle de Votação — Sistema de Gerenciamento de Relatores
+<div align="center">
 
-Sistema web para controle de sessões de julgamento, permitindo que relatores registrem seus votos em processos administrativos de forma colaborativa e em tempo real.
+# ⚖️ Controle de Votação
 
----
+### Sistema de Gerenciamento de Sessões de Julgamento
 
-## Visão Geral
+> Cole a pauta, vote, discuta e exporte — tudo em tempo real! 🚀
 
-A aplicação organiza uma pauta de julgamento em cards por relator. Cada perfil de usuário tem uma visão e permissões diferentes, garantindo que cada participante interaja apenas com o que lhe é pertinente.
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
 
----
-
-## Tecnologias
-
-- **HTML5 / CSS3** — Interface com design Glassmorphism e tema escuro
-- **JavaScript (Vanilla)** — Lógica de aplicação sem frameworks
-- **Firebase Realtime Database** — Persistência e sincronização em tempo real entre todos os usuários conectados
-- **Google Fonts (Inter)** — Tipografia
+</div>
 
 ---
 
-## Perfis de Acesso
+## 🌟 O que é isso?
 
-| Perfil | Acesso | Senha |
-|---|---|---|
-| **Mestre Jedi (Admin)** | Acesso total: vota, vê todos os votos, edita e exclui qualquer processo | `Mestre@Yoda` |
-| **Secretária** | Gerencia a pauta: importa processos, cria/remove relatores, edita dispositivos da decisão, exporta relatório | `Tarja@Preta` |
-| **Relator** | Visualiza toda a pauta, registra seu próprio voto, marca processos para discussão e adiciona observações pessoais | Sem senha |
+Uma aplicação web colaborativa para **controle de sessões de julgamento administrativo**. Relatores, secretaria e administradores se conectam ao mesmo painel e interagem com a pauta **em tempo real**, cada um com sua visão e permissões.
+
+Sem instalação. Sem backend próprio. Só abrir e votar. ✅
 
 ---
 
-## Funcionalidades
+## 🛠️ Tecnologias
 
-### Secretária
-- **Parser de pauta** — Cola o texto de uma pauta administrativa e o sistema extrai automaticamente os relatores, protocolos, interessados e assuntos
-- **Criação de relatores** — Adiciona novos relatores manualmente ao sistema
-- **Edição de processos** — Altera protocolo, interessado e dispositivo da decisão
-- **Exclusão** — Remove processos individuais ou reseta toda a pauta
-- **Exportar relatório (.txt)** — Gera um arquivo de texto com todos os processos, dispositivos de decisão e observações registradas
-
-### Relator
-- Registra seu **voto pessoal** em cada processo (deferido, indeferido, diligência, etc.)
-- Visualiza o **voto do relator** (titular) ao lado do próprio voto
-- Marca processos que precisam de **discussão** em plenário
-- Adiciona **observações pessoais** por processo
-
-### Admin (Mestre Jedi)
-- Tudo que a Secretária e os Relatores fazem
-- Vê quais relatores marcaram processos para discussão
-- Ações de editar e excluir disponíveis em todos os cards
+| Tecnologia | Papel |
+|---|---|
+| 🎨 **HTML5 + CSS3** | Interface com **Glassmorphism** e tema escuro |
+| ⚡ **JavaScript Vanilla** | Lógica 100% no frontend, sem frameworks |
+| 🔥 **Firebase Realtime Database** | Sincronização ao vivo entre todos os usuários |
+| ✍️ **Google Fonts (Inter)** | Tipografia moderna e legível |
 
 ---
 
-## Estrutura do Projeto
+## 👥 Perfis de Acesso
+
+O sistema tem **3 tipos de usuário**, cada um com sua visão:
+
+### 🗡️ Mestre Jedi — *Admin*
+> Poder absoluto. Com grande poder vem grande responsabilidade.
+- Vê **todos os votos** de todos os relatores
+- Edita e exclui qualquer processo
+- Visualiza quem pediu discussão em plenário
+- Acesso protegido por senha
+
+### 📋 Secretária
+> A engrenagem que faz tudo funcionar.
+- Importa a pauta colando o texto — o parser faz o resto 🤖
+- Cria e remove relatores
+- Edita processos e preenche o dispositivo da decisão
+- Exporta o relatório final em `.txt`
+- Acesso protegido por senha
+
+### 🧑‍⚖️ Relator
+> Acesso simples, direto ao ponto.
+- Vê **toda a pauta** organizada por relator
+- Registra seu **voto pessoal** em cada processo
+- Marca processos que precisam de **discussão** 🚩
+- Adiciona **observações** privadas
+- Sem senha — só selecionar o nome e entrar
+
+---
+
+## ✨ Funcionalidades em Destaque
+
+### 🤖 Parser Inteligente de Pauta
+Cole o texto bruto da página de pauta — o sistema identifica automaticamente **relatores, protocolos, interessados e assuntos** sem precisar digitar nada manualmente.
+
+### 🔴 Sincronização em Tempo Real
+Powered by Firebase. Um relator vota e **todo mundo vê na hora**, sem precisar atualizar a página.
+
+### 📤 Exportação de Relatório
+Gera um arquivo `.txt` formatado com toda a sessão: processos, dispositivos de decisão e observações de cada relator.
+
+---
+
+## 🗳️ Opções de Voto
+
+```
+✅ Deferido              ⚡ Deferido em parte
+❌ Indeferido            ⏱️ Intempestivo
+🔍 Diligência            🚫 Não conhecido
+📤 Retirado de pauta     🚧 Impedido
+✔️ Confirmada a decisão  🔄 Reformada a decisão
+🔨 Cassada a decisão
+```
+
+---
+
+## 📁 Estrutura do Projeto
 
 ```
 controle-de-votacao/
-├── index.html          # Estrutura principal da aplicação
-├── css/
-│   └── styles.css      # Estilos (Glassmorphism, tema escuro, responsividade)
-└── js/
-    ├── app.js          # Lógica principal: autenticação, renderização, Firebase, exportação
-    └── parser.js       # Extrator de dados: interpreta texto de pauta e retorna estrutura de dados
+├── 📄 index.html        # Estrutura principal da aplicação
+├── 🎨 css/
+│   └── styles.css       # Glassmorphism, tema escuro, responsividade
+└── ⚡ js/
+    ├── app.js           # Lógica principal: auth, renderização, Firebase, exportação
+    └── parser.js        # Parser: transforma texto de pauta em estrutura de dados
 ```
 
 ---
 
-## Como Usar
+## 🚀 Como Usar
 
-1. Abra o `index.html` em qualquer navegador moderno (requer conexão com a internet para Firebase)
-2. Selecione seu perfil no seletor e, se necessário, insira a senha
-3. **Secretária**: cole o conteúdo da pauta no campo de texto e clique em **Processar e Preencher**
-4. **Relatores**: acesse com seu nome, registre seus votos e observações
-5. **Admin**: acompanhe tudo e exporte o relatório ao final da sessão
+```
+1. Abra o index.html no navegador  (requer internet para o Firebase)
+2. Selecione seu perfil no seletor
+3. Se for Secretária ou Admin → insira sua senha
+4. Secretária: cole a pauta → clique em "Processar e Preencher" 🤖
+5. Relatores: vote, marque discussões, adicione observações
+6. Admin: acompanhe tudo e exporte o relatório ao final 📤
+```
 
 ---
 
-## Opções de Voto
-
-- Deferido
-- Deferido em parte
-- Indeferido
-- Intempestivo
-- Diligência
-- Não conhecido
-- Retirado de pauta
-- Impedido
-- Confirmada a decisão
-- Reformada a decisão
-- Cassada a decisão
+> 💡 **Dica:** As senhas de acesso são definidas no arquivo `js/app.js` e devem ser mantidas em segredo — nunca as exponha publicamente!

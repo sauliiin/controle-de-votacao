@@ -1,0 +1,400 @@
+:root {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --bg-dark: #0f172a;
+    --card-bg: rgba(255, 255, 255, 0.05);
+    --border-glass: rgba(255, 255, 255, 0.1);
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --success: #22c55e;
+    --danger: #ef4444;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+/* Glassmorphism Classes */
+.glass {
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    border-radius: 16px;
+}
+
+/* Login Screen */
+#login-screen {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 400px;
+    padding: 2rem;
+    text-align: center;
+}
+
+h1 {
+    font-size: 1.875rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+}
+
+.user-select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-glass);
+    border-radius: 8px;
+    color: white;
+    margin-bottom: 1.5rem;
+    outline: none;
+}
+
+.btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-export {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.btn-export:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Main Dashboard Layout */
+.app-container {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+}
+
+header {
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-glass);
+}
+
+.role-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    background: rgba(255,255,255,0.1);
+}
+
+#logout-link {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#logout-link:hover {
+    transform: scale(1.2);
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+main {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+/* Spreadsheet Components */
+.sheet-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.sheet-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255,255,255,0.02);
+    overflow: visible; /* Garante que tooltips não sumam */
+}
+
+.sheet-table th, .sheet-table td {
+    border: 1px solid var(--border-glass);
+    padding: 8px 12px;
+    text-align: left;
+    position: relative; /* Base para o z-index dos tooltips */
+    overflow: visible; /* Essencial para tooltips */
+}
+
+.relator-card {
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1; /* Permite que filhos com z-index alto apareçam no topo */
+}
+
+.relator-card-header {
+    background: rgba(99, 102, 241, 0.1);
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--primary);
+    position: relative;
+    z-index: 0; /* Fica abaixo dos tooltips do corpo da tabela */
+}
+
+.edit-input {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid var(--primary);
+    color: white;
+    padding: 4px 8px;
+    width: 100%;
+    border-radius: 4px;
+}
+
+.btn-edit {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    padding: 4px 10px;
+    font-size: 0.8rem;
+}
+
+.btn-edit:hover {
+    background: var(--primary);
+}
+
+.sheet-table th {
+    background: rgba(255,255,255,0.05);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Hidden elements */
+.hidden {
+    display: none !important;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+/* Elegant Checkbox */
+.custom-checkbox {
+    width: 20px;
+    height: 20px;
+    appearance: none;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid var(--border-glass);
+    border-radius: 4px;
+    cursor: pointer;
+    position: relative;
+    transition: 0.3s;
+}
+
+.custom-checkbox:checked {
+    background: var(--primary);
+}
+
+.custom-checkbox:checked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 14px;
+}
+
+/* Vote Select */
+.vote-select {
+    padding: 6px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--border-glass);
+    border-radius: 6px;
+    color: white;
+    font-size: 0.85rem;
+    width: 100%;
+    cursor: pointer;
+    outline: none;
+}
+
+.vote-select option {
+    background: var(--bg-dark);
+}
+
+.obs-input {
+    width: 100%;
+    padding: 6px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text-main);
+    font-size: 0.85rem;
+}
+
+.obs-input:focus {
+    background: rgba(0,0,0,0.2);
+    border-color: var(--primary);
+}
+
+input[type="text"], textarea {
+    width: 100%;
+    padding: 10px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border-glass);
+    border-radius: 4px;
+    color: white;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    main {
+        padding: 1rem;
+    }
+
+    header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .toolbar h2 {
+        font-size: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .sheet-table th, .sheet-table td {
+        padding: 6px 8px;
+        font-size: 0.8rem;
+    }
+
+    .login-card {
+        padding: 1.5rem;
+    }
+}
+
+/* Custom Scrollbar for a premium feel */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-glass);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Custom Tooltip for Observations */
+.obs-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.obs-tooltip {
+    visibility: hidden;
+    width: 320px;
+    background-color: var(--bg-dark);
+    color: #fff;
+    text-align: justify;
+    border-radius: 8px;
+    padding: 15px;
+    position: absolute;
+    z-index: 9999; /* Valor bem alto para garantir topo */
+    bottom: 140%; /* Subir um pouco mais para não bater no cabeçalho */
+    left: 40%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    border: 1px solid var(--primary);
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+    font-size: 0.95rem;
+    word-wrap: break-word;
+    pointer-events: none;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    height: auto;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.obs-wrapper:hover .obs-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.obs-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -8px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: var(--primary) transparent transparent transparent;
+}

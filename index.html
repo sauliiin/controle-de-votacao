@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gerenciamento de Relatores</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <section id="login-screen">
+        <div class="login-card glass">
+            <h1>Acesso ao Sistema</h1>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted)">Selecione seu perfil para continuar</p>
+            <select id="user-selector" class="user-select">
+                <option value="" disabled selected>Quem é você?</option>
+                <option value="JEDI">Mestre Jedi (Admin)</option>
+                <option value="SECRETARIA">Secretária</option>
+                <!-- Relatores serão carregados dinamicamente aqui -->
+            </select>
+            <div id="password-container" class="form-group hidden">
+                <input type="password" id="user-password" placeholder="Digite sua senha" class="user-select" style="margin-bottom: 0;">
+            </div>
+            <button id="login-btn" class="btn btn-primary" style="margin-top: 1.5rem;">Entrar</button>
+        </div>
+    </section>
+
+    <!-- Main Dashboard -->
+    <div id="app-container" class="app-container">
+        <header class="glass">
+            <div class="user-info">
+                <span id="current-user-display" style="font-weight: 700;">Nome do Usuário</span>
+                <span id="role-badge" class="role-badge">Role</span>
+            </div>
+            <button id="logout-link">Sair</button>
+        </header>
+
+        <main>
+            <!-- Secretary Tool: Link Parser -->
+            <section id="secretary-tools" class="hidden">
+                <div class="glass" style="padding: 1.5rem; margin-bottom: 2rem;">
+                    <h3>Extrair Dados de Link</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Cole o link ou o conteúdo da página para processar a pauta.</p>
+                    <div class="form-group">
+                        <textarea id="raw-content" rows="4" placeholder="Cole o conteúdo da página aqui..."></textarea>
+                    </div>
+                    <button id="parse-content-btn" class="btn btn-primary" style="width: auto;">Processar e Preencher</button>
+                    <button id="export-txt-btn" class="btn btn-export" style="width: auto; margin-left: 10px;">Exportar (.txt)</button>
+                    <button id="clear-all-btn" class="btn" style="width: auto; margin-left: 10px; background: var(--danger);">Excluir Tudo</button>
+                </div>
+
+                <div class="glass" style="padding: 1.5rem;">
+                    <h3>Criar Novo Relator</h3>
+                    <div class="toolbar" style="margin-top: 1rem;">
+                        <input type="text" id="new-relator-name" placeholder="Nome do Relator">
+                        <button id="add-relator-btn" class="btn btn-primary" style="width: auto;">Adicionar Relator</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Spreadsheet Interface (Grouped View) -->
+            <section id="spreadsheet-view" class="hidden">
+                <div class="toolbar">
+                    <h2 id="sheet-title">Processos por Relator</h2>
+                </div>
+                <div id="relators-container">
+                    <!-- Relator Cards will be injected here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Firebase SDK (Compat Version for Vanilla JS) -->
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-database-compat.js"></script>
+
+    <!-- Scripts -->
+    <script src="js/parser.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

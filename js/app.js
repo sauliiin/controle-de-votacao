@@ -21,25 +21,39 @@ const db = firebase.database();
 const state = {
     currentUser: null,
     relatores: [],
+    currentJunta: 'JIRFI',
+    juntaRef: null,
     save: () => {
-        // Save to Firebase instead of localStorage
-        db.ref('relatores').set(state.relatores);
+        if (state.juntaRef) {
+            state.juntaRef.set(state.relatores);
+        }
     }
 };
 
-// Listen for Realtime Updates from Firebase
-db.ref('relatores').on('value', (snapshot) => {
-    const data = snapshot.val();
-    state.relatores = data || [];
-    
-    // Only re-render if the user is logged in
-    if (state.currentUser) {
-        updateSelectors();
-        renderDashboard();
-    } else {
-        updateSelectors(); // Still need to update login Dropdown if new relators added
+function initJuntaListener() {
+    if (state.juntaRef) {
+        state.juntaRef.off('value');
     }
-});
+    
+    // Default JIRFI uses 'relatores' path to preserve existing data. Others use isolated paths.
+    const path = state.currentJunta === 'JIRFI' ? 'relatores' : `juntas/${state.currentJunta}/relatores`;
+    state.juntaRef = db.ref(path);
+    
+    state.juntaRef.on('value', (snapshot) => {
+        const data = snapshot.val();
+        state.relatores = data || [];
+        
+        if (state.currentUser) {
+            updateSelectors();
+            renderDashboard();
+        } else {
+            updateSelectors(); // Still need to update login Dropdown if new relators added
+        }
+    });
+}
+
+// Initialize realtime listener for the first time
+initJuntaListener();
 
 // UI Elements
 const loginScreen = document.getElementById('login-screen');
@@ -60,7 +74,14 @@ const passwordInput = document.getElementById('user-password');
 // Constants for passwords
 const PASSWORDS = {
     'JEDI': 'Mestre@Yoda',
-    'SECRETARIA': 'Tarja@Preta'
+    'SECRETARIA': {
+        'JIRFI': 'Tarja@Preta',
+        'JIJFI-I': 'shir@like',
+        'JIJFI-II': 'fe@fe',
+        'JIJFI-III': 'ga@by',
+        'JIJFI-IV': 'geo@gi',
+        'JIJFI-V': 'ma@ma'
+    }
 };
 
 // Initialize User Selector
@@ -101,7 +122,9 @@ loginBtn.onclick = () => {
 
     if (val === 'JEDI' || val === 'SECRETARIA') {
         const pass = passwordInput.value;
-        if (pass !== PASSWORDS[val]) {
+        const expectedPass = val === 'SECRETARIA' ? PASSWORDS['SECRETARIA'][state.currentJunta] : PASSWORDS['JEDI'];
+        
+        if (pass !== expectedPass) {
             return alert('Senha incorreta para este perfil!');
         }
         state.currentUser = { name: val, role: val };
@@ -119,6 +142,34 @@ logoutBtn.onclick = () => {
     appContainer.style.display = 'none';
     loginScreen.style.display = 'flex';
 };
+
+// Junta Selection Logic
+const juntaOptions = document.querySelectorAll('#junta-options a');
+const displayJuntaAtual = document.getElementById('display-junta-atual');
+
+juntaOptions.forEach(opt => {
+    opt.addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        const newJunta = e.target.getAttribute('data-junta');
+        if(state.currentJunta === newJunta) return;
+        
+        state.currentJunta = newJunta;
+        displayJuntaAtual.textContent = newJunta;
+        
+        juntaOptions.forEach(o => o.classList.remove('active'));
+        e.target.classList.add('active');
+        
+        // Log out user on Junta change for security and refresh
+        state.currentUser = null;
+        appContainer.style.display = 'none';
+        loginScreen.style.display = 'flex';
+        passwordInput.value = '';
+        
+        // Re-init listener for new Junta
+        initJuntaListener();
+    });
+});
 
 function renderDashboard() {
     loginScreen.style.display = 'none';
@@ -435,7 +486,7 @@ document.getElementById('clear-all-btn').onclick = () => {
 };
 
 document.getElementById('export-txt-btn').onclick = () => {
-    let relatorio = `RELATÓRIO DA SESSÃO DE JULGAMENTO\n`;
+    let relatorio = `RELATÓRIO DA SESSÃO DE JULGAMENTO - JUNTA: ${state.currentJunta}\n`;
     relatorio += `Gerado em: ${new Date().toLocaleString('pt-BR')}\n\n`;
 
     let hasData = false;

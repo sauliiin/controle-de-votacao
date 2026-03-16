@@ -446,16 +446,6 @@ function deleteEntry(relIndex, entryIndex) {
 }
 
 // Secretary Actions
-document.getElementById('add-relator-btn').onclick = () => {
-    const name = document.getElementById('new-relator-name').value;
-    if (!name) return;
-    state.relatores.push({ name: name, data: [] });
-    state.save();
-    updateSelectors();
-    document.getElementById('new-relator-name').value = '';
-    alert(`Relator ${name} criado!`);
-};
-
 document.getElementById('parse-content-btn').onclick = () => {
     const text = document.getElementById('raw-content').value.trim();
     if (!text) return alert('Erro: O campo de conteúdo está vazio. Por favor, cole a pauta para processar.');

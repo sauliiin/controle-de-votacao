@@ -19,11 +19,7 @@ const db = firebase.database();
 
 const state = {
     currentUser: null,
-    relatores: [
-        { name: 'LEOVEGILDO SOARES E SOUZA', data: [] },
-        { name: 'REGINA ANDREA MARTINS', data: [] },
-        { name: 'WELBER FRANK CANTUÁRIA MENDES', data: [] }
-    ],
+    relatores: [],
     save: () => {
         // Save to Firebase instead of localStorage
         db.ref('relatores').set(state.relatores);
@@ -449,9 +445,7 @@ document.getElementById('export-txt-btn').onclick = () => {
         if (r.data.length === 0) return;
         hasData = true;
 
-        relatorio += `========================================================================\n`;
-        relatorio += `RELATOR(A): ${r.name.toUpperCase()}\n`;
-        relatorio += `========================================================================\n\n`;
+        relatorio += `RELATOR(A): ${r.name.toUpperCase()}\n\n`;
 
         r.data.forEach((entry, i) => {
             if (!entry.votes) entry.votes = {};
@@ -473,18 +467,17 @@ document.getElementById('export-txt-btn').onclick = () => {
                 }
             });
 
-            relatorio += `[ ${i + 1} ] Protocolo: ${entry.protocolFull || entry.protocol}\n`;
-            relatorio += `      Interessado: ${entry.solicitor}\n`;
+            relatorio += `Protocolo: ${entry.protocolFull || entry.protocol}\n`;
+            relatorio += `Interessado: ${entry.solicitor}\n`;
             if (entry.assunto) {
-                relatorio += `      Assunto: ${entry.assunto}\n`;
+                relatorio += `Assunto: ${entry.assunto}\n`;
             }
-            relatorio += `      Dispositivo da Decisão: ${dispositivoTexto.toUpperCase()}\n`;
-            relatorio += `      Marcado p/ Discutir: ${discStr}\n`;
+            relatorio += `Dispositivo da Decisão: ${dispositivoTexto.toUpperCase()}\n`;
             
             if (obsGerais.length > 0) {
-                relatorio += `      Observações:\n`;
+                relatorio += `Observações:\n`;
                 obsGerais.forEach(obs => {
-                    relatorio += `        ${obs}\n`;
+                    relatorio += `${obs}\n`;
                 });
             }
             relatorio += `\n`;

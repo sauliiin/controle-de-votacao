@@ -4,68 +4,68 @@
  */
 const Parser = {
     parseContent: (text) => {
+        const lines = text.split(/\r?\n/);
         const results = [];
-        // Split text by "Relator(a):"
-        const relatorBlocks = text.split(/Relator\(a\):/i);
-        
-        // Skip the first block if it doesn't contain a relator
-        for (let i = 1; i < relatorBlocks.length; i++) {
-            const block = relatorBlocks[i];
-            // Extract relator name from the first line
-            const lines = block.trim().split(/\n/);
-            const relatorName = lines[0].trim().toUpperCase();
+        let currentRelator = null;
+        let currentEntry = null;
 
-            // Split this relator's block by the word "Protocolo" to separate individual processes
-            const processBlocks = block.split(/Protocolo/i);
-            const entries = [];
+        const relatorRegex = /Relator\(a\):\s*([^\n\r]+)/i;
+        const protocolRegex = /(?:Protocolo[^\n\r]*[:\s]|n[º°]|n\.)\s*([\d.]{2,}[/\d-]+)/i;
+        const solicitorRegex = /(?:Solicitante|Interessado|Solicitante\/Interessado):\s*([^\n\r]+)/i;
+        const assuntoRegex = /Assunto:\s*([^\n\r]+)/i;
 
-            // Skip the first sub-block (it's the relator name line)
-            for (let j = 1; j < processBlocks.length; j++) {
-                const pBlock = processBlocks[j];
-                
-                // Extract Full Protocol string and fallback
-                const protFullMatch = pBlock.match(/Protocolo[^\n\r]*:\s*([^\n\r]+)/i);
-                const fallbackProtMatch = pBlock.match(/(?:n[º°]|n\.|:)?\s*([\d.]{2,}[/\d-]+)/i);
-                
-                // Extract Solicitor
-                const solMatch = pBlock.match(/Solicitante(?:\/\s*Interessado)?:\s*([^\n\r]+)/i);
-                
-                // Extract Assunto
-                const assuntoMatch = pBlock.match(/Assunto:\s*([^\n\r]+)/i);
+        lines.forEach(line => {
+            const trimmedLine = line.trim();
+            if (!trimmedLine) return;
 
-                // Extract Dispositivo da decisão
-                // Need to match everything after "Dispositivo da decisão:" until the end of the block or next blank line.
-                // Since blocks are split by "Protocolo", the rest of the text here belongs to this process.
-                const dispMatch = pBlock.match(/Dispositivo da decisão:\s*([\s\S]*)/i);
-
-                let fullProtocol = "";
-                let baseProtocol = "";
-
-                if (protFullMatch) {
-                    fullProtocol = protFullMatch[1].trim();
-                    const baseMatch = fullProtocol.match(/[\d.]{2,}[/\d-]+/);
-                    baseProtocol = baseMatch ? baseMatch[0] : fullProtocol;
-                } else if (fallbackProtMatch) {
-                    fullProtocol = fallbackProtMatch[1].trim();
-                    baseProtocol = fullProtocol;
-                }
-
-                if (baseProtocol) {
-                    entries.push({
-                        protocol: baseProtocol,
-                        protocolFull: fullProtocol,
-                        solicitor: solMatch ? solMatch[1].trim() : "Não identificado",
-                        assunto: assuntoMatch ? assuntoMatch[1].trim() : "",
-                        dispositivo: dispMatch ? dispMatch[1].trim() : ""
-                    });
-                }
+            // Check for Relator
+            const relMatch = trimmedLine.match(relatorRegex);
+            if (relMatch) {
+                currentRelator = relMatch[1].trim().toUpperCase();
+                return;
             }
 
-            results.push({
-                relator: relatorName,
-                data: entries
-            });
-        }
+            // Check for Protocol (Starts a new entry)
+            // Fix: We reset currentEntry only when a NEW protocol line is found
+            const protMatch = trimmedLine.match(protocolRegex);
+            if (protMatch) {
+                const relatorToUse = currentRelator || "NÃO IDENTIFICADO";
+                
+                let relatorGroup = results.find(r => r.relator === relatorToUse);
+                if (!relatorGroup) {
+                    relatorGroup = { relator: relatorToUse, data: [] };
+                    results.push(relatorGroup);
+                }
+
+                currentEntry = {
+                    protocol: protMatch[1].trim(),
+                    protocolFull: trimmedLine,
+                    solicitor: "Não identificado",
+                    assunto: "Sem assunto definido", // Default placeholder
+                    dispositivo: "",
+                    votes: {},
+                    obs: {},
+                    discutir: {}
+                };
+                relatorGroup.data.push(currentEntry);
+                return;
+            }
+
+            // Check for Solicitor
+            const solMatch = trimmedLine.match(solicitorRegex);
+            if (solMatch && currentEntry) {
+                currentEntry.solicitor = solMatch[1].trim();
+                return;
+            }
+
+            // Check for Assunto
+            const assMatch = trimmedLine.match(assuntoRegex);
+            if (assMatch && currentEntry) {
+                currentEntry.assunto = assMatch[1].trim();
+                return;
+            }
+        });
+
         return results;
     }
 };

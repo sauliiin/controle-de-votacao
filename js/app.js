@@ -294,7 +294,7 @@ function renderSpreadsheet(relatorName) {
             } else {
                 // SECRETARIA
                 voteColumnsHtml = `
-                    <td>
+                    <td class="cell-assunto">
                         <div class="obs-wrapper" style="max-width: 250px;">
                             <span style="display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.8rem; color: var(--text-muted); cursor: help;">
                                 ${entry.assunto || 'Sem assunto definido'}
@@ -403,6 +403,12 @@ function toggleEdit(relIndex, entryIndex) {
 
     protocolCell.innerHTML = `<input type="text" class="edit-input" value="${protocolVal}">`;
     solicitorCell.innerHTML = `<input type="text" class="edit-input" value="${solicitorVal}">`;
+
+    if (state.currentUser.role === 'SECRETARIA') {
+        const assuntoCell = row.querySelector('.cell-assunto');
+        assuntoCell.innerHTML = `<input type="text" class="edit-input" value="${entry.assunto || ''}">`;
+    }
+
     actionCell.innerHTML = `
         <div style="display: flex; gap: 5px;">
             <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8rem;" onclick="saveEntry(${relIndex}, ${entryIndex})">Salvar</button>
@@ -420,6 +426,9 @@ function saveEntry(relIndex, entryIndex) {
         state.relatores[relIndex].data[entryIndex].protocolFull = newProtocol;
         const baseMatch = newProtocol.match(/[\d.]{2,}[/\d-]+/);
         state.relatores[relIndex].data[entryIndex].protocol = baseMatch ? baseMatch[0] : newProtocol;
+        
+        const newAssunto = row.querySelector('.cell-assunto input').value;
+        state.relatores[relIndex].data[entryIndex].assunto = newAssunto;
     } else {
         state.relatores[relIndex].data[entryIndex].protocol = newProtocol;
     }
@@ -448,29 +457,44 @@ document.getElementById('add-relator-btn').onclick = () => {
 };
 
 document.getElementById('parse-content-btn').onclick = () => {
-    const text = document.getElementById('raw-content').value;
-    if (!text) return;
+    const text = document.getElementById('raw-content').value.trim();
+    if (!text) return alert('Erro: O campo de conteúdo está vazio. Por favor, cole a pauta para processar.');
     
-    const parsed = Parser.parseContent(text);
-    
-    parsed.forEach(p => {
-        const normalizedName = p.relator.toUpperCase().trim();
-        let relator = state.relatores.find(r => r.name.toUpperCase().trim() === normalizedName);
+    try {
+        const parsed = Parser.parseContent(text);
         
-        // Se não existir, cria automaticamente
-        if (!relator) {
-            relator = { name: normalizedName, data: [] };
-            state.relatores.push(relator);
+        if (parsed.length === 0) {
+            return alert('Erro na Identificação: Não foi possível encontrar nenhum Protocolo válido no texto colado.\n\nVerifique se o texto segue o padrão: \n"Protocolo: 00.000... / Relator(a): NOME"');
         }
-        
-        relator.data.push(...p.data);
-    });
 
-    state.save();
-    updateSelectors(); // Atualiza a lista de login caso novos relatores tenham sido criados
-    renderDashboard();
-    document.getElementById('raw-content').value = '';
-    alert('Pauta processada! Relatores e processos foram atualizados automaticamente.');
+        let totalProtocols = 0;
+        parsed.forEach(p => {
+            const normalizedName = p.relator.toUpperCase().trim();
+            let relator = state.relatores.find(r => r.name.toUpperCase().trim() === normalizedName);
+            
+            if (!relator) {
+                relator = { name: normalizedName, data: [] };
+                state.relatores.push(relator);
+            }
+            
+            relator.data.push(...p.data);
+            totalProtocols += p.data.length;
+        });
+
+        if (totalProtocols === 0) {
+            return alert('Erro: Nenhum processo foi extraído. Certifique-se de que os protocolos estão formatados corretamente (Ex: 31.00674702/2025-77).');
+        }
+
+        state.save();
+        updateSelectors(); 
+        renderDashboard();
+        document.getElementById('raw-content').value = '';
+        alert(`Sucesso! Foram processados ${totalProtocols} processos para ${parsed.length} relatador(es).`);
+        
+    } catch (err) {
+        console.error(err);
+        alert('Erro Crítico no Processamento: Ocorreu um erro inesperado ao ler o texto. Por favor, verifique se há caracteres especiais inválidos ou se o formato está muito fora do padrão.\n\nDetalhe técnico: ' + err.message);
+    }
 };
 
 document.getElementById('clear-all-btn').onclick = () => {

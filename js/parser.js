@@ -4,65 +4,64 @@
  */
 const Parser = {
     parseContent: (text) => {
-        const lines = text.split(/\r?\n/);
         const results = [];
-        let currentRelator = null;
-        let currentEntry = null;
+        // Extract Relator blocks
+        const relatorBlocks = text.split(/Relator\(a\):/i);
 
-        const relatorRegex = /Relator\(a\):\s*([^\n\r]+)/i;
-        const protocolRegex = /(?:Protocolo[^\n\r]*[:\s]|n[º°]|n\.)\s*([\d.]{2,}[/\d-]+)/i;
-        const solicitorRegex = /(?:Solicitante|Interessado|Solicitante\/Interessado):\s*([^\n\r]+)/i;
-        const assuntoRegex = /Assunto:\s*([^\n\r]+)/i;
+        relatorBlocks.forEach((block, index) => {
+            if (index === 0 && !block.toLowerCase().includes('protocolo')) return;
 
-        lines.forEach(line => {
-            const trimmedLine = line.trim();
-            if (!trimmedLine) return;
+            let relatorName = "NÃO IDENTIFICADO";
+            let content = block;
 
-            // Check for Relator
-            const relMatch = trimmedLine.match(relatorRegex);
-            if (relMatch) {
-                currentRelator = relMatch[1].trim().toUpperCase();
-                return;
+            if (index > 0) {
+                const lines = block.trim().split(/\n/);
+                relatorName = lines[0].trim().toUpperCase();
+                content = lines.slice(1).join('\n');
             }
 
-            // Check for Protocol (Starts a new entry)
-            // Fix: We reset currentEntry only when a NEW protocol line is found
-            const protMatch = trimmedLine.match(protocolRegex);
-            if (protMatch) {
-                const relatorToUse = currentRelator || "NÃO IDENTIFICADO";
+            // Split by "Protocolo" to get individual process entries
+            const processBlocks = content.split(/Protocolo/i);
+            const entries = [];
+
+            processBlocks.forEach(pBlock => {
+                if (!pBlock.toLowerCase().includes('solicitante')) return;
+
+                // Extract Protocol (Everything after "n°", "nº", "n." or ":" until "Solicitante")
+                const protocolMatch = pBlock.match(/(?:n[º°\.]|:)+\s*([^\n\r]+?)(?=\s*Solicitante)/i);
                 
-                let relatorGroup = results.find(r => r.relator === relatorToUse);
-                if (!relatorGroup) {
-                    relatorGroup = { relator: relatorToUse, data: [] };
-                    results.push(relatorGroup);
+                // Extract Solicitor (Everything between "Solicitante" and "Assunto")
+                const solicitorMatch = pBlock.match(/(?:Solicitante|Interessado|Solicitante\/Interessado):\s*([^\n\r]+?)(?=\s*Assunto)/i);
+                
+                // Extract Assunto (Everything after "Assunto" until the end or next marker)
+                const assuntoMatch = pBlock.match(/Assunto:\s*([\s\S]+?)(?=\s*(?:Protocolo|Relator\(a\)|Conforme|$))/i);
+
+                if (protocolMatch) {
+                    const fullProtocol = protocolMatch[1].trim();
+                    // Clean number only for the relator view
+                    const baseMatch = fullProtocol.match(/[\d.]{2,}[/\d-]+/);
+                    const baseProtocol = baseMatch ? baseMatch[0] : fullProtocol;
+
+                    entries.push({
+                        protocol: baseProtocol,
+                        protocolFull: fullProtocol,
+                        solicitor: solicitorMatch ? solicitorMatch[1].trim() : "Não identificado",
+                        assunto: assuntoMatch ? assuntoMatch[1].trim() : "Sem assunto definido",
+                        dispositivo: "",
+                        votes: {},
+                        obs: {},
+                        discutir: {}
+                    });
                 }
+            });
 
-                currentEntry = {
-                    protocol: protMatch[1].trim(),
-                    protocolFull: trimmedLine,
-                    solicitor: "Não identificado",
-                    assunto: "Sem assunto definido", // Default placeholder
-                    dispositivo: "",
-                    votes: {},
-                    obs: {},
-                    discutir: {}
-                };
-                relatorGroup.data.push(currentEntry);
-                return;
-            }
-
-            // Check for Solicitor
-            const solMatch = trimmedLine.match(solicitorRegex);
-            if (solMatch && currentEntry) {
-                currentEntry.solicitor = solMatch[1].trim();
-                return;
-            }
-
-            // Check for Assunto
-            const assMatch = trimmedLine.match(assuntoRegex);
-            if (assMatch && currentEntry) {
-                currentEntry.assunto = assMatch[1].trim();
-                return;
+            if (entries.length > 0) {
+                let relGroup = results.find(r => r.relator === relatorName);
+                if (relGroup) {
+                    relGroup.data.push(...entries);
+                } else {
+                    results.push({ relator: relatorName, data: entries });
+                }
             }
         });
 

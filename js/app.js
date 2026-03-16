@@ -231,6 +231,9 @@ function renderSpreadsheet(relatorName) {
             const discutirVal = entry.discutir[userKey] || false;
             const obsVal = entry.obs[userKey] || "";
             const dispositivoVal = entry.dispositivo || "";
+            
+            // Differentiated Protocol Display
+            const protocolToDisplay = (state.currentUser.role === 'SECRETARIA') ? (entry.protocolFull || entry.protocol) : entry.protocol;
 
             let actionsHtml = '';
             let voteColumnsHtml = '';
@@ -258,38 +261,18 @@ function renderSpreadsheet(relatorName) {
                     </td>
                 `;
             } else if (state.currentUser.role === 'JEDI') {
-                // JEDI: Vê tudo + Edição Admin
+                // ... rest remains same for JEDI
+                // (Already correctly implemented in original file, but I'll re-include for completeness in this chunk if needed)
                 const discussoes = Object.entries(entry.discutir)
                     .filter(([name, val]) => val === true)
                     .map(([name]) => name);
-                
-                const discLabel = discussoes.length > 0 
-                    ? `<span style="color: var(--danger); font-size: 0.7rem; display: block;">Sim (${discussoes.join(', ')})</span>` 
-                    : '<span style="color: var(--text-muted); font-size: 0.7rem;">Não</span>';
-
+                const discLabel = discussoes.length > 0 ? `<span style="color: var(--danger); font-size: 0.7rem; display: block;">Sim (${discussoes.join(', ')})</span>` : '<span style="color: var(--text-muted); font-size: 0.7rem;">Não</span>';
                 voteColumnsHtml = `
-                    <td>
-                        <select class="vote-select" onchange="updateEntryField(${relatorIndex}, ${i}, 'votes', this.value)">
-                            <option value="">Selecione...</option>
-                            ${VOTE_OPTIONS.map(opt => `<option value="${opt}" ${personalVote === opt ? 'selected' : ''}>${opt}</option>`).join('')}
-                        </select>
-                    </td>
+                    <td><select class="vote-select" onchange="updateEntryField(${relatorIndex}, ${i}, 'votes', this.value)"><option value="">Selecione...</option>${VOTE_OPTIONS.map(opt => `<option value="${opt}" ${personalVote === opt ? 'selected' : ''}>${opt}</option>`).join('')}</select></td>
                     <td style="font-weight: 700; color: var(--primary)">${relatorVote}</td>
                     <td style="text-align: center;">${discLabel}</td>
-                    <td>
-                        <div class="obs-wrapper">
-                            <input type="text" class="obs-input" value="${obsVal}" placeholder="Notas..." 
-                                onblur="updateEntryField(${relatorIndex}, ${i}, 'obs', this.value)"
-                                oninput="this.nextElementSibling.innerText = this.value || 'Sem observações'">
-                            <div class="obs-tooltip">${obsVal || 'Sem observações'}</div>
-                        </div>
-                    </td>
-                    <td>
-                        <div style="display: flex; gap: 5px;">
-                            <button class="btn btn-edit" onclick="toggleEdit(${relatorIndex}, ${i})">Editar</button>
-                            <button class="btn" style="padding: 4px 8px; font-size: 12px; background: var(--danger)" onclick="deleteEntry(${relatorIndex}, ${i})">Excluir</button>
-                        </div>
-                    </td>
+                    <td><div class="obs-wrapper"><input type="text" class="obs-input" value="${obsVal}" placeholder="Notas..." onblur="updateEntryField(${relatorIndex}, ${i}, 'obs', this.value)" oninput="this.nextElementSibling.innerText = this.value || 'Sem observações'"><div class="obs-tooltip">${obsVal || 'Sem observações'}</div></div></td>
+                    <td><div style="display: flex; gap: 5px;"><button class="btn btn-edit" onclick="toggleEdit(${relatorIndex}, ${i})">Editar</button><button class="btn" style="padding: 4px 8px; font-size: 12px; background: var(--danger)" onclick="deleteEntry(${relatorIndex}, ${i})">Excluir</button></div></td>
                 `;
             } else {
                 // SECRETARIA
@@ -320,7 +303,7 @@ function renderSpreadsheet(relatorName) {
             tableRows += `
                 <tr id="row-${relatorIndex}-${i}">
                     <td>${i + 1}</td>
-                    <td class="cell-protocol" style="font-size: 0.85rem;">${state.currentUser.role === 'SECRETARIA' ? (entry.protocolFull || entry.protocol) : entry.protocol}</td>
+                    <td class="cell-protocol" style="font-size: 0.85rem;">${protocolToDisplay}</td>
                     <td class="cell-solicitor" style="font-size: 0.85rem;">${entry.solicitor}</td>
                     ${voteColumnsHtml}
                 </tr>

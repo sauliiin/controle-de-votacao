@@ -73,7 +73,6 @@ const passwordInput = document.getElementById('user-password');
 
 // Constants for passwords
 const PASSWORDS = {
-    'JEDI': 'Mestre@Yoda',
     'SECRETARIA': {
         'JIRFI': 'Tarja@Preta',
         'JIJFI-I': 'shir@like',
@@ -101,7 +100,7 @@ function updateSelectors() {
 
 userSelector.onchange = () => {
     const val = userSelector.value;
-    if (val === 'JEDI' || val === 'SECRETARIA') {
+    if (val === 'SECRETARIA') {
         passwordContainer.classList.remove('hidden');
     } else {
         passwordContainer.classList.add('hidden');
@@ -120,10 +119,12 @@ loginBtn.onclick = () => {
     const val = userSelector.value;
     if (!val) return alert('Selecione um usuário');
 
-    if (val === 'JEDI' || val === 'SECRETARIA') {
+    if (val === 'PRESIDENTE') {
+        state.currentUser = { name: val, role: val };
+    } else if (val === 'SECRETARIA') {
         const pass = passwordInput.value;
-        const expectedPass = val === 'SECRETARIA' ? PASSWORDS['SECRETARIA'][state.currentJunta] : PASSWORDS['JEDI'];
-        
+        const expectedPass = PASSWORDS['SECRETARIA'][state.currentJunta];
+
         if (pass !== expectedPass) {
             return alert('Senha incorreta para este perfil!');
         }
@@ -181,7 +182,7 @@ function renderDashboard() {
     secretaryTools.classList.add('hidden');
     spreadsheetView.classList.add('hidden');
 
-    if (state.currentUser.role === 'SECRETARIA' || state.currentUser.role === 'JEDI') {
+    if (state.currentUser.role === 'SECRETARIA' || state.currentUser.role === 'PRESIDENTE') {
         secretaryTools.classList.remove('hidden');
         spreadsheetView.classList.remove('hidden');
         renderSpreadsheet(null);
@@ -199,12 +200,12 @@ const VOTE_OPTIONS = [
 
 function renderSpreadsheet(relatorName) {
     relatorsContainer.innerHTML = '';
-    const isJedi = state.currentUser.role === 'JEDI';
+    const isPresidente = state.currentUser.role === 'PRESIDENTE';
     const isRelator = state.currentUser.role === 'RELATOR';
     
-    sheetTitle.textContent = (isRelator || isJedi) ? "Sessão de Julgamento" : "Painel Geral Administrativo";
+    sheetTitle.textContent = (isRelator || isPresidente) ? "Sessão de Julgamento" : "Painel Geral Administrativo";
     
-    if (isJedi) sheetTitle.textContent += " (Admin)";
+    if (isPresidente) sheetTitle.textContent += " (Presidente)";
     
     const filter = state.relatores;
 
@@ -260,8 +261,8 @@ function renderSpreadsheet(relatorName) {
                         </div>
                     </td>
                 `;
-            } else if (state.currentUser.role === 'JEDI') {
-                // ... rest remains same for JEDI
+            } else if (state.currentUser.role === 'PRESIDENTE') {
+                // ... rest remains same for PRESIDENTE
                 // (Already correctly implemented in original file, but I'll re-include for completeness in this chunk if needed)
                 const discussoes = Object.entries(entry.discutir)
                     .filter(([name, val]) => val === true)
@@ -320,7 +321,7 @@ function renderSpreadsheet(relatorName) {
                 <th style="width: 70px; text-align: center; font-size: 0.8rem;">Disc.</th>
                 <th style="font-size: 0.8rem;">Obs.</th>
               </tr>`
-            : state.currentUser.role === 'JEDI' 
+            : state.currentUser.role === 'PRESIDENTE' 
             ? `<tr>
                 <th style="width: 40px;">#</th>
                 <th>Protocolo</th>

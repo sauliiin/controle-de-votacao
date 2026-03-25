@@ -437,7 +437,7 @@ document.getElementById('parse-content-btn').onclick = () => {
         const parsed = Parser.parseContent(text);
         
         if (parsed.length === 0) {
-            return alert('Erro na Identificação: Não foi possível encontrar nenhum Protocolo válido no texto colado.\n\nVerifique se o texto segue o padrão: \n"Protocolo: 00.000... / Relator(a): NOME"');
+            return alert('Erro na Identificação: Não foi possível encontrar nenhum Protocolo válido no texto colado.\n\nVerifique se o texto segue o padrão: \n"Protocolo: 00.000... / Relator(a) ou Relatora: NOME"');
         }
 
         let totalProtocols = 0;

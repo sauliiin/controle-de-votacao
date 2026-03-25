@@ -6,7 +6,7 @@ const Parser = {
     parseContent: (text) => {
         const results = [];
         // Extract Relator blocks
-        const relatorBlocks = text.split(/Relator\(a\):/i);
+        const relatorBlocks = text.split(/Relator(?:a|\(a\))?:?\s*/i);
 
         relatorBlocks.forEach((block, index) => {
             if (index === 0 && !block.toLowerCase().includes('protocolo')) return;
@@ -34,7 +34,7 @@ const Parser = {
                 const solicitorMatch = pBlock.match(/(?:Solicitante|Interessado|Solicitante\/Interessado):\s*([^\n\r]+?)(?=\s*Assunto)/i);
                 
                 // Extract Assunto (Everything after "Assunto" until the end or next marker)
-                const assuntoMatch = pBlock.match(/Assunto:\s*([\s\S]+?)(?=\s*(?:Protocolo|Relator\(a\)|Conforme|$))/i);
+                const assuntoMatch = pBlock.match(/Assunto:\s*([\s\S]+?)(?=\s*(?:Protocolo|Relator(?:a|\(a\))?:?\s|Conforme|$))/i);
 
                 if (protocolMatch) {
                     const fullProtocol = protocolMatch[1].trim();

@@ -30,6 +30,43 @@ const state = {
     }
 };
 
+function canonicalizeProtocol(value) {
+    if (!value || typeof value !== 'string') return value;
+
+    const cleanedValue = value
+        .replace(/\s*\n+\s*/g, ' ')
+        .replace(/[ \t]{2,}/g, ' ')
+        .replace(/[–—]/g, '-')
+        .trim();
+    const protocolMatch = cleanedValue.match(/([\d.]+\/\d{4}-\d{2})\s*-?\s*([A-Z]+(?:-[A-Z]+)*)/i);
+
+    if (protocolMatch) {
+        return `${protocolMatch[1]} - ${protocolMatch[2].toUpperCase()}`;
+    }
+
+    return cleanedValue
+        .replace(/^[^0-9]+/, '')
+        .replace(/\s*[:;.,-]+\s*$/, '')
+        .trim();
+}
+
+function sanitizeRelatoresData(relatores) {
+    return relatores.map(relator => ({
+        ...relator,
+        data: (relator.data || []).map(entry => {
+            const protocolSource = entry.protocolFull || entry.protocol || '';
+            const protocolFull = canonicalizeProtocol(protocolSource);
+            const protocolMatch = protocolFull.match(/[\d.]+\/\d{4}-\d{2}/);
+
+            return {
+                ...entry,
+                protocolFull: protocolFull || entry.protocolFull,
+                protocol: protocolMatch ? protocolMatch[0] : (entry.protocol || protocolFull)
+            };
+        })
+    }));
+}
+
 function initJuntaListener() {
     if (state.juntaRef) {
         state.juntaRef.off('value');
@@ -41,7 +78,13 @@ function initJuntaListener() {
     
     state.juntaRef.on('value', (snapshot) => {
         const data = snapshot.val();
-        state.relatores = data || [];
+        const rawRelatores = data || [];
+        const sanitizedRelatores = sanitizeRelatoresData(rawRelatores);
+        state.relatores = sanitizedRelatores;
+
+        if (JSON.stringify(rawRelatores) !== JSON.stringify(sanitizedRelatores)) {
+            state.save();
+        }
         
         if (state.currentUser) {
             updateSelectors();

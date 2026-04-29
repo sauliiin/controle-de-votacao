@@ -30,8 +30,46 @@ const state = {
     }
 };
 
+function getEntryRef(relIndex, entryIndex) {
+    if (!state.juntaRef) return null;
+    return state.juntaRef.child(`${relIndex}/data/${entryIndex}`);
+}
+
+function normalizeFirebaseList(value) {
+    if (Array.isArray(value)) {
+        return value.filter(Boolean);
+    }
+
+    if (value && typeof value === 'object') {
+        return Object.keys(value)
+            .sort((a, b) => Number(a) - Number(b))
+            .map(key => value[key])
+            .filter(Boolean);
+    }
+
+    return [];
+}
+
+function forEachFirebaseList(value, callback) {
+    if (Array.isArray(value)) {
+        value.forEach((item, index) => {
+            if (item) callback(item, index);
+        });
+        return;
+    }
+
+    if (value && typeof value === 'object') {
+        Object.keys(value)
+            .sort((a, b) => Number(a) - Number(b))
+            .forEach(key => {
+                if (value[key]) callback(value[key], key);
+            });
+    }
+}
+
 function canonicalizeProtocol(value) {
-    if (!value || typeof value !== 'string') return value;
+    if (!value) return '';
+    if (typeof value !== 'string') return String(value);
 
     const cleanedValue = value
         .replace(/\s*\n+\s*/g, ' ')
@@ -50,21 +88,139 @@ function canonicalizeProtocol(value) {
         .trim();
 }
 
-function sanitizeRelatoresData(relatores) {
-    return relatores.map(relator => ({
-        ...relator,
-        data: (relator.data || []).map(entry => {
-            const protocolSource = entry.protocolFull || entry.protocol || '';
-            const protocolFull = canonicalizeProtocol(protocolSource);
-            const protocolMatch = protocolFull.match(/[\d.]+\/\d{4}-\d{2}/);
+function getSanitizedProtocolFields(entry) {
+    const protocolSource = entry.protocolFull || entry.protocol || '';
+    const protocolFull = canonicalizeProtocol(protocolSource);
+    const protocolMatch = protocolFull.match(/[\d.]+\/\d{4}-\d{2}/);
 
-            return {
-                ...entry,
-                protocolFull: protocolFull || entry.protocolFull,
-                protocol: protocolMatch ? protocolMatch[0] : (entry.protocol || protocolFull)
-            };
-        })
+    return {
+        protocolFull: protocolFull || entry.protocolFull || '',
+        protocol: protocolMatch ? protocolMatch[0] : (entry.protocol || protocolFull || '')
+    };
+}
+
+function sanitizeRelatoresData(relatores) {
+    return normalizeFirebaseList(relatores).map(relator => ({
+        ...relator,
+        data: normalizeFirebaseList(relator.data).map(entry => ({
+            ...entry,
+            ...getSanitizedProtocolFields(entry)
+        }))
     }));
+}
+
+function syncSanitizedRelatoresData(rawRelatores) {
+    if (!state.juntaRef) return;
+
+    const updates = {};
+
+    forEachFirebaseList(rawRelatores, (relator, relatorIndex) => {
+        forEachFirebaseList(relator.data, (entry, entryIndex) => {
+            const sanitizedFields = getSanitizedProtocolFields(entry);
+
+            if (sanitizedFields.protocolFull && entry.protocolFull !== sanitizedFields.protocolFull) {
+                updates[`${relatorIndex}/data/${entryIndex}/protocolFull`] = sanitizedFields.protocolFull;
+            }
+
+            if (sanitizedFields.protocol && entry.protocol !== sanitizedFields.protocol) {
+                updates[`${relatorIndex}/data/${entryIndex}/protocol`] = sanitizedFields.protocol;
+            }
+        });
+    });
+
+    if (Object.keys(updates).length > 0) {
+        state.juntaRef.update(updates);
+    }
+}
+
+function normalizeRelatoresForWrite(relatores) {
+    return normalizeFirebaseList(relatores).map(relator => ({
+        ...relator,
+        data: normalizeFirebaseList(relator.data)
+    }));
+}
+
+function appendParsedEntries(parsed) {
+    if (!state.juntaRef) {
+        parsed.forEach(p => {
+            const normalizedName = p.relator.toUpperCase().trim();
+            let relator = state.relatores.find(r => r.name.toUpperCase().trim() === normalizedName);
+
+            if (!relator) {
+                relator = { name: normalizedName, data: [] };
+                state.relatores.push(relator);
+            }
+
+            p.data.forEach(newEntry => {
+                if (!relator.data.some(entry => entryMatchesProcess(entry, newEntry))) {
+                    relator.data.push(newEntry);
+                }
+            });
+        });
+        state.save();
+        return Promise.resolve();
+    }
+
+    return state.juntaRef.transaction(currentRelatores => {
+        const relatores = normalizeRelatoresForWrite(currentRelatores);
+
+        parsed.forEach(p => {
+            const normalizedName = p.relator.toUpperCase().trim();
+            let relator = relatores.find(r => r.name.toUpperCase().trim() === normalizedName);
+
+            if (!relator) {
+                relator = { name: normalizedName, data: [] };
+                relatores.push(relator);
+            }
+
+            relator.data = normalizeFirebaseList(relator.data);
+            p.data.forEach(newEntry => {
+                if (!relator.data.some(entry => entryMatchesProcess(entry, newEntry))) {
+                    relator.data.push(newEntry);
+                }
+            });
+        });
+
+        return relatores;
+    });
+}
+
+function entryMatchesProcess(entry, targetEntry) {
+    if (!entry || !targetEntry) return false;
+
+    const entryProtocol = canonicalizeProtocol(entry.protocolFull || entry.protocol || '').toUpperCase();
+    const targetProtocol = canonicalizeProtocol(targetEntry.protocolFull || targetEntry.protocol || '').toUpperCase();
+
+    return Boolean(entryProtocol && targetProtocol && entryProtocol === targetProtocol);
+}
+
+function findEntryIndex(entries, targetEntry, preferredIndex) {
+    if (entryMatchesProcess(entries[preferredIndex], targetEntry)) {
+        return preferredIndex;
+    }
+
+    return entries.findIndex(entry => entryMatchesProcess(entry, targetEntry));
+}
+
+function removeEntryFromServer(relIndex, entryIndex) {
+    const targetEntry = state.relatores[relIndex]?.data?.[entryIndex];
+
+    if (!state.juntaRef) {
+        state.relatores[relIndex].data.splice(entryIndex, 1);
+        state.save();
+        return Promise.resolve();
+    }
+
+    return state.juntaRef.child(`${relIndex}/data`).transaction(currentData => {
+        const entries = normalizeFirebaseList(currentData);
+        const targetIndex = findEntryIndex(entries, targetEntry, entryIndex);
+
+        if (targetIndex >= 0) {
+            entries.splice(targetIndex, 1);
+        }
+
+        return entries;
+    });
 }
 
 function initJuntaListener() {
@@ -81,10 +237,7 @@ function initJuntaListener() {
         const rawRelatores = data || [];
         const sanitizedRelatores = sanitizeRelatoresData(rawRelatores);
         state.relatores = sanitizedRelatores;
-
-        if (JSON.stringify(rawRelatores) !== JSON.stringify(sanitizedRelatores)) {
-            state.save();
-        }
+        syncSanitizedRelatoresData(rawRelatores);
         
         if (state.currentUser) {
             updateSelectors();
@@ -406,11 +559,23 @@ function updateEntryField(relIndex, entryIndex, field, value) {
     const entry = state.relatores[relIndex].data[entryIndex];
     if (field === 'votes' || field === 'obs' || field === 'discutir') {
         const userKey = state.currentUser.name;
+        if (!entry[field]) entry[field] = {};
         entry[field][userKey] = value;
     } else if (field === 'dispositivo') {
         entry[field] = value;
     }
-    state.save();
+
+    const entryRef = getEntryRef(relIndex, entryIndex);
+    if (entryRef) {
+        if (field === 'votes' || field === 'obs' || field === 'discutir') {
+            entryRef.child(`${field}/${state.currentUser.name}`).set(value);
+        } else {
+            entryRef.child(field).set(value);
+        }
+    } else {
+        state.save();
+    }
+
     // Não renderizamos tudo de novo para não perder o foco se for input, 
     // a menos que seja o Voto Pessoal que afeta o Voto do Relator (se for o dono)
     if (field === 'votes' && state.currentUser.name === state.relatores[relIndex].name) {
@@ -448,32 +613,50 @@ function saveEntry(relIndex, entryIndex) {
     const row = document.getElementById(`row-${relIndex}-${entryIndex}`);
     const newProtocol = row.querySelector('.cell-protocol input').value;
     const newSolicitor = row.querySelector('.cell-solicitor input').value;
+    const entry = state.relatores[relIndex].data[entryIndex];
+    const updates = {};
 
     if (state.currentUser.role === 'SECRETARIA') {
-        state.relatores[relIndex].data[entryIndex].protocolFull = newProtocol;
+        entry.protocolFull = newProtocol;
         const baseMatch = newProtocol.match(/[\d.]{2,}[/\d-]+/);
-        state.relatores[relIndex].data[entryIndex].protocol = baseMatch ? baseMatch[0] : newProtocol;
+        entry.protocol = baseMatch ? baseMatch[0] : newProtocol;
+        updates.protocolFull = entry.protocolFull;
+        updates.protocol = entry.protocol;
         
         const newAssunto = row.querySelector('.cell-assunto input').value;
-        state.relatores[relIndex].data[entryIndex].assunto = newAssunto;
+        entry.assunto = newAssunto;
+        updates.assunto = entry.assunto;
     } else {
-        state.relatores[relIndex].data[entryIndex].protocol = newProtocol;
+        entry.protocol = newProtocol;
+        updates.protocol = entry.protocol;
     }
-    state.relatores[relIndex].data[entryIndex].solicitor = newSolicitor;
+    entry.solicitor = newSolicitor;
+    updates.solicitor = entry.solicitor;
     
-    state.save();
+    const entryRef = getEntryRef(relIndex, entryIndex);
+    if (entryRef) {
+        entryRef.update(updates);
+    } else {
+        state.save();
+    }
+
     renderSpreadsheet(state.currentUser.role === 'RELATOR' ? state.currentUser.name : null);
 }
 
-function deleteEntry(relIndex, entryIndex) {
+async function deleteEntry(relIndex, entryIndex) {
     if(!confirm("Deseja realmente excluir este processo?")) return;
-    state.relatores[relIndex].data.splice(entryIndex, 1);
-    state.save();
-    renderSpreadsheet(state.currentUser.role === 'RELATOR' ? state.currentUser.name : null);
+
+    try {
+        await removeEntryFromServer(relIndex, entryIndex);
+        renderSpreadsheet(state.currentUser.role === 'RELATOR' ? state.currentUser.name : null);
+    } catch (err) {
+        console.error(err);
+        alert('Erro ao excluir o processo. Tente novamente em instantes.');
+    }
 }
 
 // Secretary Actions
-document.getElementById('parse-content-btn').onclick = () => {
+document.getElementById('parse-content-btn').onclick = async () => {
     const text = document.getElementById('raw-content').value.trim();
     if (!text) return alert('Erro: O campo de conteúdo está vazio. Por favor, cole a pauta para processar.');
     
@@ -486,15 +669,6 @@ document.getElementById('parse-content-btn').onclick = () => {
 
         let totalProtocols = 0;
         parsed.forEach(p => {
-            const normalizedName = p.relator.toUpperCase().trim();
-            let relator = state.relatores.find(r => r.name.toUpperCase().trim() === normalizedName);
-            
-            if (!relator) {
-                relator = { name: normalizedName, data: [] };
-                state.relatores.push(relator);
-            }
-            
-            relator.data.push(...p.data);
             totalProtocols += p.data.length;
         });
 
@@ -502,7 +676,7 @@ document.getElementById('parse-content-btn').onclick = () => {
             return alert('Erro: Nenhum processo foi extraído. Certifique-se de que os protocolos estão formatados corretamente (Ex: 31.00674702/2025-77).');
         }
 
-        state.save();
+        await appendParsedEntries(parsed);
         updateSelectors(); 
         renderDashboard();
         document.getElementById('raw-content').value = '';

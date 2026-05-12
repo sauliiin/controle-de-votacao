@@ -482,6 +482,7 @@ function renderSpreadsheet(relatorName) {
                             ${entry.assunto ? `<div class="obs-tooltip" style="text-align: left;">${entry.assunto}</div>` : ''}
                         </div>
                     </td>
+                    <td style="font-weight: 700; color: var(--primary)">${relatorVote}</td>
                     <td>
                         <input type="text" class="edit-input" style="width: 100%; border: none; background: transparent;"
                                value="${dispositivoVal}" 
@@ -533,6 +534,7 @@ function renderSpreadsheet(relatorName) {
                 <th style="font-size: 0.8rem;">Protocolo</th>
                 <th style="font-size: 0.8rem;">Interessado</th>
                 <th style="width: 250px; font-size: 0.8rem;">Assunto</th>
+                <th style="width: 150px; font-size: 0.8rem;">Voto do Relator</th>
                 <th style="width: 250px; font-size: 0.8rem;">Dispositivo da Decisão</th>
                 <th style="width: 150px; font-size: 0.8rem;">Ações</th>
               </tr>`;
